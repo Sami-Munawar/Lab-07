@@ -1,6 +1,6 @@
 ---
 title: "Lab 07 - Modelling course evaluations"
-author: "INSERT NAME HERE"
+author: "Sami Munawar"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -10,12 +10,14 @@ output: html_document
 ```{r load-packages, message=FALSE, echo=TRUE}
 library(tidyverse)
 library(tidymodels)
-
 ```
 
 
 ```{r read-data}
 evals<-read.csv("data/evals.csv", row.names=1)
+
+view(evals)
+
 ```
 
 
@@ -24,7 +26,11 @@ evals<-read.csv("data/evals.csv", row.names=1)
 1.  Visualize the distribution of `score` in the dataframe `evals`.
 
 ```{r viz-score}
-# add code here
+
+ggplot(evals, aes(x = score)) +
+  geom_density(fill = "blue", alpha = 0.7) +
+  labs(title = "Density of Scores", x = "Score", y = "Density")
+
 ```
 
 *Add your other details and narratives here.*
@@ -32,7 +38,14 @@ evals<-read.csv("data/evals.csv", row.names=1)
 2.  Visualize and describe the relationship between `score` and `bty_avg` using `geom_point()` to represent the data. 
 
 ```{r scatterplot}
-# add code here
+
+ggplot(evals, aes(x = bty_avg, y = score)) +
+  geom_point(colour="blue") +
+  theme_minimal() +
+  labs(title = "Relationship between Score and Beauty Average",
+       x = "Beauty Average (bty_avg)",
+       y = "Score")
+
 ```
 
 *Add your narrative and other details here.*
@@ -45,12 +58,12 @@ evals<-read.csv("data/evals.csv", row.names=1)
 # remove eval = FALSE from the code chunk options after filling in the blanks
 score_bty_fit <- linear_reg() %>%
   set_engine("lm") %>%
-  fit(___ ~ ___, data = ___)
+  fit(score ~ bty_avg, data = evals)
 ```
 
 ```{r tidy-score_bty_fit, eval = FALSE}
 # remove eval = FALSE from the code chunk options after filling in the blanks
-tidy(___)
+tidy(score_bty_fit)
 ```
 
 *Add your linear model here. Don't worry too much about notation, you can use things like score-hat.*
@@ -58,33 +71,65 @@ tidy(___)
 2. Plot the data again using `geom_jitter()`, and add the regression line.
 
 ```{r viz-score_bty_fit,eval=FALSE}
-# add your plot here. Hint, you can add the regression line using geom_smooth()
+
+# Create the scatter plot with jitter and add the regression line
+ggplot(evals, aes(x = bty_avg, y = score)) +
+  geom_jitter(width = 0.2, height = 0.2, alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  theme_minimal() +
+  labs(title = "Relationship between Score and Beauty Average with Regression Line",
+       x = "Beauty Average (bty_avg)",
+       y = "Score")
+
+
 ```
 
 3. Interpret the slope of the linear model in context of the data.
 
-*Add your interpretation here*
+
+
+$\text{score} = 3.88033975 + 0.06663704 \times \text{bty_avg}$
+
+$\text{score} = 3.88033975 + 0.06663704 \times \text{(0)}$
+
+$\text{score} = 3.88033975$
+
 
 4. Interpret the intercept of the linear model in context of the data. Comment on whether or not the intercept makes sense in this context.
 
-*Add your interpretation here*
+no in the context the intercept doesn't make sense.
 
 5. Determine the $R^2$ of the model and interpret it in the context of the data.
 
 ```{r R2, eval = FALSE}
 # remove eval = FALSE from the code chunk options after filling in the blanks
-glance(___)$___
+
+score_bty_fit <- lm(score ~ bty_avg, data = evals)
+
+model_summary <- summary(score_bty_fit)
+
+summary(score_bty_fit)$r.squared
+
 ```
 
-*Add your interpretation here*
+not good fit approx 3.5% variance in the score.
 
 6. Make a plot of residuals vs. predicted values for the model above.
 
 ```{r viz-score_bty_fit-diagnostic, eval = FALSE}
 # remove eval = FALSE from the code chunk options after filling in the blanks
-score_bty_aug <- augment(score_bty_fit$fit)
+score_bty_aug <- augment(score_bty_fit)
 
-ggplot(___) + ...
+ggplot(score_bty_aug, aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Residuals vs. Fitted Values",
+       x = "Fitted Values",
+       y = "Residuals") +
+  theme_minimal()
+
+
+
 ```
 
 # Exercise 3: Simple Linear regression with a categorical predictor
@@ -92,25 +137,44 @@ ggplot(___) + ...
 0. Look at the variable rank, and determine the frequency of each category level.
 
 ```{r}
-# ... 
+
+# Assuming evals is your dataframe and rank is the categorical variable
+rank_frequency <- table(evals$rank)
+
+# Output the frequency of each category level
+print(rank_frequency)
+
+rank_proportion <- prop.table(table(evals$rank))
+
+# Output the proportion of each category level
+print(rank_proportion)
+
+
+
 ```
 
 1. Fit a new linear model called `score_rank_fit` to predict average professor evaluation `score` based on `rank` of the professor.
 
 ```{r fit-score_rank_fit}
-# fit model
+score_rank_fit  <- linear_reg() %>%
+  set_engine("lm") %>%
+  fit(score ~ rank, data = evals)
 
-# tidy model output
+tidy(score_rank_fit)
 ```
 
 *Add your narrative here.*
 
+it
+
 2. Fit a new linear model called `score_gender_fit` to predict average professor evaluation `score` based on `gender` of the professor. 
 
 ```{r fit-score_gender_fit}
-# fit model
+score_gender_fit  <- linear_reg() %>%
+  set_engine("lm") %>%
+  fit(score ~ gender, data = evals)
+tidy(score_gender_fit)
 
-# tidy model output
 ```
 
 ```{r score_gender_intercept, eval=FALSE}
@@ -136,50 +200,124 @@ score_gender_slope <- tidy(score_gender_fit) %>%
 1. Fit a multiple linear regression model, predicting average professor evaluation `score` based on average beauty rating (`bty_avg`) and `gender.`
 
 ```{r fit-score_bty_gender_fit}
-# fit model
-
-# tidy model output
+score_bty_gender_fit <- lm(score ~ bty_avg + gender, data = evals)
+summary(score_bty_gender_fit)
 ```
 
 *Add your narrative here.*
 
 ```{r eval = FALSE}
-ggplot(___) + ...
+library(ggplot2)
+
+# First, create a new dataframe with the fitted values
+evals$score_predicted <- fitted(score_bty_gender_fit)
+
+# Now plot the points and add lines for the fitted values
+# Assuming 'gender' is coded as 0 for females and 1 for males in your original dataframe
+ggplot(evals, aes(x = bty_avg, y = score, color = gender)) +
+  geom_point() +
+  geom_line(aes(y = score_predicted)) +
+  labs(title = "Professor Score by Beauty Average and Gender",
+       x = "Beauty Average (bty_avg)",
+       y = "Score") +
+  theme_minimal()
+
 ```
 
 2. What percent of the variability in `score` is explained by the model `score_bty_gender_fit`. 
 
 ```{r}
-# ...
+# Assuming your model is named score_bty_gender_fit and is already fitted:
+summary_score_bty_gender_fit <- summary(score_bty_gender_fit)
+
+# The R^2 value can be found in the summary object:
+r_squared <- summary_score_bty_gender_fit$r.squared
+
+# Print the R^2 value:
+print(r_squared)
+
+r_squared_percent <- r_squared * 100
+print(r_squared_percent)
+
+
 ```
 
 
 3. What is the equation of the line corresponding to just male professors?
 
-*Add your equation here.*
+$ \text{score}_{\text{male}} = 3.91973 + 0.07416 \cdot \text{bty_avg}$
 
 4. For two professors who received the same beauty rating, which gender tends to have the higher course evaluation score?
 
-*Add your narrative here.*
+the model predicts that the male professor would, on average, receive a higher course evaluation score compared to female professors.
 
 5. How does the relationship between beauty and evaluation score vary between male and female professors?
 
-*Add your narrative here.*
-
+ the relationship between beauty and evaluation scores does not vary between genders in terms of the slope, however taking into account the added coefficient for males professors, the intercept becomes much higher larger and therefore suggests that males professors overall would receive a higher course evaluation score compared to female professors. 
+ 
 6. How do the adjusted $R^2$ values of `score_bty_fit` and `score_bty_gender_fit` compare? 
 
 ```{r eval=FALSE}
 # remove eval = FALSE from the code chunk options after filling in the blanks
-glance(___)$adj.r.squared
-glance(___)$adj.r.squared
+
+score_bty_fit <- lm(score ~ bty_avg, data = evals)
+score_bty_gender_fit <- lm(score ~ bty_avg + gender, data = evals)
+
+# Retrieve the adjusted R-squared values
+adjusted_r2_bty <- summary(score_bty_fit)$adj.r.squared
+adjusted_r2_bty_gender <- summary(score_bty_gender_fit)$adj.r.squared
+
+# Print the adjusted R-squared values
+print(adjusted_r2_bty)
+print(adjusted_r2_bty_gender)
+
+# Compare the adjusted R-squared values
+if (adjusted_r2_bty > adjusted_r2_bty_gender) {
+  print("The model with only beauty rating has a higher adjusted R-squared.")
+} else if (adjusted_r2_bty < adjusted_r2_bty_gender) {
+  print("The model with beauty rating and gender has a higher adjusted R-squared.")
+} else {
+  print("The adjusted R-squared values are equal.")
+}
+
 ```
 
-*Add your narrative here.*
+The higher adjusted R^2 for score_bty_gender_fit indicates that this model provides a better fit to the data compared to score_bty_fit,
+
+adding gender as a predictor alongside beauty rating improves the model's ability to explain the variance in professor evaluation scores
 
 7. Compare the slopes of `bty_avg` under the two models (`score_bty_fit` and `score_bty_gender_fit`).
 
-*Add your narrative here.*
+
 
 # Exercise 5: Interpretation of log-transformed response variables
 
-If you do not know how to use LaTeX, do this exercise with pen and paper.
+\begin{align*}
+&\text{Given the slope coefficient } b_1 = 0.0192 \text{ in the log-transformed model, we have:} \\
+&\log(\text{price for width } (x + 1)) - \log(\text{price for width } x) = 0.0192 \\
+
+&\text{Using the property of logarithms (subtraction and logs):} \\
+&\log\left(\frac{\text{price for width } (x + 1)}{\text{price for width } x}\right) = 0.0192 \\
+
+&\text{Applying the exponential function to both sides:} \\
+&\exp\left(\log\left(\frac{\text{price for width } (x + 1)}{\text{price for width } x}\right)\right) = \exp(0.0192) \\
+
+&\text{Since } e^{\log(x)} = x, \text{ we get:} \\
+&\frac{\text{price for width } (x + 1)}{\text{price for width } x} = e^{0.0192} \\
+
+&\text{This can be rewritten as:} \\
+&\text{price for width } (x + 1) = e^{0.0192} \times \text{price for width } x \\
+
+&\text{Hence, for each additional inch the painting is wider, the price of the painting} \\
+&\text{is expected to be higher by a factor of } e^{0.0192}. \\
+
+&\text{Using the approximation } e^x \approx 1 + x \text{ for small values of } x: \\
+&e^{0.0192} \approx 1 + 0.0192 \\
+
+&\text{This approximation allows us to express the factor as } 1 + 0.0192, \\
+&\text{which is a 1.92\% increase.} \\
+
+&\text{Therefore, the interpretation of the slope is:} \\
+&\text{For each additional inch the painting is wider, the price of the painting} \\
+&\text{is expected to be higher, on average, by approximately 1.92\%}.
+\end{align*}
